@@ -1,9 +1,7 @@
 # thinking_utils.py
 
 import random
-import os
-import nltk
-from nltk.corpus import stopwords
+import re
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
@@ -12,41 +10,40 @@ import matplotlib.pyplot as plt
 import io
 import base64
 
-# Set up persistent NLTK data path
-nltk_data_dir = os.path.join(os.path.expanduser("~"), "nltk_data")
-if not os.path.exists(os.path.join(nltk_data_dir, "tokenizers/punkt")):
-    nltk.download("punkt", download_dir=nltk_data_dir)
-    nltk.download("stopwords", download_dir=nltk_data_dir)
-nltk.data.path.append(nltk_data_dir)
+# Custom minimal tokenizer (no nltk)
+def simple_tokenize(text):
+    return re.findall(r'\b\w+\b', text.lower())
 
-from nltk.tokenize import word_tokenize
-
-stop_words = set(stopwords.words('english'))
+# Stopword list (minimal, no nltk)
+STOPWORDS = set("""
+a an the is are was were be being been have has had do does did but if or because as until while of at by for with about
+against between into through during before after above below to from up down in out on off over under again further then once
+here there when where why how all any both each few more most other some such no nor not only own same so than too very can will just
+""".split())
 
 # Step 1: Generate dynamic, open-ended questions
-def generate_questions(num_questions=15):
+def generate_questions(num=15):
     themes = [
-        "sudden life changes", "mental exhaustion", "relationships", "goals", "failure",
-        "thinking patterns", "conflict", "communication", "motivation", "decision making",
-        "stress", "personal growth", "emotional resilience", "planning", "habit change"
+        "stress", "decision making", "relationships", "goals", "failure",
+        "personal growth", "mental exhaustion", "habit change", "planning", "motivation",
+        "emotional resilience", "conflict", "communication", "thinking patterns"
     ]
     templates = [
+        "What do you feel when you encounter {}?",
         "How do you usually respond when faced with {}?",
-        "What is your first reaction to {}?",
         "Can you describe how you think about {}?",
         "When dealing with {}, what do you typically focus on?",
-        "What do you feel when you encounter {}?",
-        "How do you handle {} in daily life?",
+        "What is your first reaction to {}?"
     ]
-    questions = [random.choice(templates).format(t) for t in random.sample(themes, num_questions)]
+    questions = [random.choice(templates).format(t) for t in random.sample(themes, num)]
     return questions
 
 # Step 2: Preprocess and vectorize text
 def preprocess_texts(texts):
     cleaned = []
     for t in texts:
-        tokens = word_tokenize(t.lower())
-        filtered = [w for w in tokens if w.isalpha() and w not in stop_words]
+        tokens = simple_tokenize(t)
+        filtered = [w for w in tokens if w not in STOPWORDS]
         cleaned.append(" ".join(filtered))
     return cleaned
 
