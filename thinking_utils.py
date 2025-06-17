@@ -1,3 +1,5 @@
+# thinking_utils.py
+
 import random
 import nltk
 from nltk.corpus import stopwords
@@ -10,60 +12,49 @@ import matplotlib.pyplot as plt
 import io
 import base64
 
-# Download required NLTK resources
 nltk.download('punkt')
 nltk.download('stopwords')
 
 stop_words = set(stopwords.words('english'))
 
-# Step 1: Generate 20 open-ended psychological questions
-def generate_questions():
-    themes = {
-        "stress": [
-            "How do you typically respond when you're feeling stressed?",
-            "What’s your first instinct when facing overwhelming pressure?",
-            "Describe how you handle mental exhaustion."
-        ],
-        "goals": [
-            "What motivates you to pursue long-term goals?",
-            "How do you react when you fall behind on a personal objective?",
-            "Describe your process for setting and sticking to goals."
-        ],
-        "failure": [
-            "What’s your first thought after experiencing failure?",
-            "How do you usually bounce back from a mistake?",
-            "Do you reflect or move on quickly after things go wrong?"
-        ],
-        "relationships": [
-            "How do you approach conflict in close relationships?",
-            "What do you value most in communication with others?",
-            "Describe a recent emotional interaction and how you handled it."
-        ],
-        "decision making": [
-            "How do you make tough decisions?",
-            "Do you prefer logic, emotion, or instinct when deciding?",
-            "How do you handle decisions that affect others?"
-        ],
-        "self-reflection": [
-            "How often do you reflect on your own thoughts?",
-            "Do you notice patterns in your thinking over time?",
-            "How do you evaluate your own behavior?"
-        ],
-        "change": [
-            "How do you handle sudden life changes?",
-            "Are you more comfortable with routine or spontaneity?",
-            "What’s your mindset when things don’t go as planned?"
-        ]
+def generate_questions(n=15):
+    themes = ["stress", "decision making", "relationships", "goals", "failure", "self-reflection", "change"]
+    templates = [
+        "How do you usually respond when faced with {}?",
+        "What is your first reaction to {}?",
+        "Can you describe how you think about {}?",
+        "When dealing with {}, what do you typically focus on?",
+        "What emotions arise in you when you face {}?",
+        "How do you prepare yourself mentally for {}?",
+        "When thinking of {}, what thoughts dominate your mind?"
+    ]
+    questions = []
+    for _ in range(n):
+        t = random.choice(themes)
+        temp = random.choice(templates)
+        questions.append(temp.format(t))
+    return questions
+
+def get_mcq_choices(theme):
+    choices = {
+        "stress": ["Take a break", "Talk to someone", "Ignore it", "Overthink"],
+        "goals": ["Set clear targets", "Work randomly", "Procrastinate", "Track progress"],
+        "failure": ["Feel guilty", "Learn and move on", "Blame others", "Try again"],
+        "relationships": ["Avoid conflict", "Confront directly", "Compromise", "Stay silent"],
+        "decision making": ["Use logic", "Follow gut", "Ask friends", "Flip a coin"],
+        "self-reflection": ["Journal daily", "Think deeply", "Never reflect", "Meditate"],
+        "change": ["Embrace it", "Fear it", "Adapt slowly", "Avoid it"]
     }
+    opts = choices.get(theme, [])
+    return random.sample(opts, 3) if len(opts) >= 3 else opts
 
-    all_questions = []
-    for theme, qs in themes.items():
-        all_questions.extend(random.sample(qs, 2))  # Pick 2 from each theme
+def detect_theme(question):
+    themes = ["stress", "goals", "failure", "relationships", "decision making", "self-reflection", "change"]
+    for theme in themes:
+        if theme in question.lower():
+            return theme
+    return "stress"
 
-    random.shuffle(all_questions)
-    return all_questions[:20]
-
-# Step 2: Clean user responses
 def preprocess_texts(texts):
     cleaned = []
     for t in texts:
@@ -72,13 +63,11 @@ def preprocess_texts(texts):
         cleaned.append(" ".join(filtered))
     return cleaned
 
-# Step 3: Convert text to vectors
 def vectorize_texts(cleaned_texts):
     vectorizer = TfidfVectorizer()
     X = vectorizer.fit_transform(cleaned_texts)
     return X, vectorizer
 
-# Step 4: Cluster thinking styles
 def cluster_thinking(X):
     best_k = 2
     best_score = -1
@@ -93,7 +82,6 @@ def cluster_thinking(X):
     labels = final_model.fit_predict(X)
     return final_model, labels
 
-# Step 5: Visualize cluster keywords
 def generate_wordcloud(texts):
     combined_text = " ".join(texts)
     wc = WordCloud(width=800, height=400, background_color="white").generate(combined_text)
