@@ -66,8 +66,10 @@ if submitted:
     for i, texts in enumerate(cluster_texts):
         st.markdown(f"### 🧩 Cluster {i+1}")
         image = generate_wordcloud(texts)
-        st.image(f"data:image/png;base64,{image}", use_column_width=True)
-        st.markdown(f"**Interpretation:** You tend to think with patterns involving keywords like:")
-        st.code(", ".join(set(" ".join(texts).split())[:10]))
+        st.image(f"data:image/png;base64,{image}", use_container_width=True)  # ✅ FIXED HERE
+
+        st.markdown("**Interpretation:** You tend to think with patterns involving keywords like:")
+        keywords = list(set(" ".join(texts).split()))[:10]  # ✅ FIXED HERE
+        st.code(", ".join(keywords))
 
     st.info("📝 Note: This is not a psychological diagnosis. It's a pattern-based insight generator.")
