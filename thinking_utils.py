@@ -1,9 +1,9 @@
 # thinking_utils.py
 
 import random
+import os
 import nltk
 from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
@@ -12,49 +12,36 @@ import matplotlib.pyplot as plt
 import io
 import base64
 
-nltk.download('punkt')
-nltk.download('stopwords')
+# Set up persistent NLTK data path
+nltk_data_dir = os.path.join(os.path.expanduser("~"), "nltk_data")
+if not os.path.exists(os.path.join(nltk_data_dir, "tokenizers/punkt")):
+    nltk.download("punkt", download_dir=nltk_data_dir)
+    nltk.download("stopwords", download_dir=nltk_data_dir)
+nltk.data.path.append(nltk_data_dir)
+
+from nltk.tokenize import word_tokenize
 
 stop_words = set(stopwords.words('english'))
 
-def generate_questions(n=15):
-    themes = ["stress", "decision making", "relationships", "goals", "failure", "self-reflection", "change"]
+# Step 1: Generate dynamic, open-ended questions
+def generate_questions(num_questions=15):
+    themes = [
+        "sudden life changes", "mental exhaustion", "relationships", "goals", "failure",
+        "thinking patterns", "conflict", "communication", "motivation", "decision making",
+        "stress", "personal growth", "emotional resilience", "planning", "habit change"
+    ]
     templates = [
         "How do you usually respond when faced with {}?",
         "What is your first reaction to {}?",
         "Can you describe how you think about {}?",
         "When dealing with {}, what do you typically focus on?",
-        "What emotions arise in you when you face {}?",
-        "How do you prepare yourself mentally for {}?",
-        "When thinking of {}, what thoughts dominate your mind?"
+        "What do you feel when you encounter {}?",
+        "How do you handle {} in daily life?",
     ]
-    questions = []
-    for _ in range(n):
-        t = random.choice(themes)
-        temp = random.choice(templates)
-        questions.append(temp.format(t))
+    questions = [random.choice(templates).format(t) for t in random.sample(themes, num_questions)]
     return questions
 
-def get_mcq_choices(theme):
-    choices = {
-        "stress": ["Take a break", "Talk to someone", "Ignore it", "Overthink"],
-        "goals": ["Set clear targets", "Work randomly", "Procrastinate", "Track progress"],
-        "failure": ["Feel guilty", "Learn and move on", "Blame others", "Try again"],
-        "relationships": ["Avoid conflict", "Confront directly", "Compromise", "Stay silent"],
-        "decision making": ["Use logic", "Follow gut", "Ask friends", "Flip a coin"],
-        "self-reflection": ["Journal daily", "Think deeply", "Never reflect", "Meditate"],
-        "change": ["Embrace it", "Fear it", "Adapt slowly", "Avoid it"]
-    }
-    opts = choices.get(theme, [])
-    return random.sample(opts, 3) if len(opts) >= 3 else opts
-
-def detect_theme(question):
-    themes = ["stress", "goals", "failure", "relationships", "decision making", "self-reflection", "change"]
-    for theme in themes:
-        if theme in question.lower():
-            return theme
-    return "stress"
-
+# Step 2: Preprocess and vectorize text
 def preprocess_texts(texts):
     cleaned = []
     for t in texts:
@@ -68,6 +55,7 @@ def vectorize_texts(cleaned_texts):
     X = vectorizer.fit_transform(cleaned_texts)
     return X, vectorizer
 
+# Step 3: Cluster thinking styles
 def cluster_thinking(X):
     best_k = 2
     best_score = -1
@@ -82,6 +70,7 @@ def cluster_thinking(X):
     labels = final_model.fit_predict(X)
     return final_model, labels
 
+# Step 4: Generate Word Cloud as base64 image
 def generate_wordcloud(texts):
     combined_text = " ".join(texts)
     wc = WordCloud(width=800, height=400, background_color="white").generate(combined_text)
